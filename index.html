@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>HomeFlow</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+<h1>HomeFlow</h1>
+</header>
+
+<nav>
+<button onclick="showPage('trabajo')">Trabajo</button>
+<button onclick="showPage('economia')">Economía</button>
+</nav>
+
+<section id="trabajo" class="page">
+<h2>Calendario laboral</h2>
+
+<div class="controls">
+<button onclick="prevMonth()">◀</button>
+<select id="month"></select>
+<select id="year"></select>
+<button onclick="nextMonth()">▶</button>
+</div>
+
+<div id="calendar"></div>
+
+</section>
+
+<section id="economia" class="page hidden">
+
+<h2>Gastos</h2>
+
+<input id="name" placeholder="Concepto">
+<input id="amount" type="number" placeholder="€">
+<input id="date" type="date">
+
+<select id="person">
+<option>Jonny</option>
+<option>Angela</option>
+<option>Compartido</option>
+</select>
+
+<button onclick="addExpense()">Guardar gasto</button>
+
+<ul id="expenseList"></ul>
+
+</section>
+
+<script src="app.js"></script>
+
+</body>
+</html>
