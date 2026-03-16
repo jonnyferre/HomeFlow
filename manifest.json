@@ -1,10 +1,10 @@
 {
   "name": "HomeFlow",
   "short_name": "HomeFlow",
-  "start_url": "./index.html",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#203a5f",
-  "theme_color": "#203a5f",
+  "background_color": "#f6f7fb",
+  "theme_color": "#f6f7fb",
   "icons": [
     {
       "src": "icons/icon-192.png",

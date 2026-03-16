@@ -1,64 +1,50 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>HomeFlow</title>
-
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="favicon.png">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HomeFlow</title>
+  <meta name="theme-color" content="#f6f7fb" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="icon" href="icons/icon-32.png" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
+  <div id="app">
+    <div id="welcome" class="screen screen--welcome"></div>
+    <div id="shell" class="hidden">
+      <header class="topbar">
+        <div class="topbar__left">
+          <button id="backBtn" class="icon-btn hidden" aria-label="Volver">←</button>
+          <div class="brand">
+            <div class="brand__title">HomeFlow</div>
+            <div class="brand__sub" id="brandSub">Gestión de hogar</div>
+          </div>
+        </div>
+        <div class="topbar__right">
+          <button id="quickAddBtn" class="icon-btn" aria-label="Añadir">＋</button>
+          <button id="settingsBtn" class="icon-btn" aria-label="Ajustes">⚙</button>
+        </div>
+      </header>
 
-<header>
-<h1>HomeFlow</h1>
-</header>
+      <main id="main" class="main"></main>
+    </div>
+  </div>
 
-<nav>
-<button onclick="showPage('trabajo')">Trabajo</button>
-<button onclick="showPage('economia')">Economía</button>
-</nav>
+  <div id="modalOverlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal__head">
+        <div id="modalTitle" class="modal__title"></div>
+        <button id="modalClose" class="icon-btn">✕</button>
+      </div>
+      <div id="modalBody" class="modal__body"></div>
+      <div id="modalFoot" class="modal__foot"></div>
+    </div>
+  </div>
 
-<section id="trabajo" class="page">
-<h2>Calendario laboral</h2>
+  <div id="toast" class="toast hidden"></div>
 
-<div class="controls">
-<button onclick="prevMonth()">◀</button>
-<select id="month"></select>
-<select id="year"></select>
-<button onclick="nextMonth()">▶</button>
-</div>
-
-<div id="calendar"></div>
-
-</section>
-
-<section id="economia" class="page hidden">
-
-<h2>Gastos</h2>
-
-<input id="name" placeholder="Concepto">
-<input id="amount" type="number" placeholder="€">
-<input id="date" type="date">
-
-<select id="person">
-<option>Jonny</option>
-<option>Angela</option>
-<option>Compartido</option>
-</select>
-
-<button onclick="addExpense()">Guardar gasto</button>
-
-<ul id="expenseList"></ul>
-
-</section>
-
-<script src="app.js"></script>
-
+  <script src="app.js"></script>
 </body>
 </html>
