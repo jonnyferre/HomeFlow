@@ -16,7 +16,7 @@ const CAT_ICONS={'Vivienda':'🏠','Supermercado':'🛒','Comida':'🛒','Gasoli
 const KEY='homeflow_real_v1';
 
 const DEFAULT={
-  ui:{welcomed:false,area:'home',jonnyTab:'trabajo',hogarTab:'economia',workMode:'combo',homeMonth:{year:2026,month:2},economyMonth:{year:2026,month:2},allocationMode:'disponible'},
+  ui:{welcomed:false,area:'home',jonnyTab:'trabajo',hogarTab:'economia',workMode:'combo',homeMonth:{year:2026,month:2},economyMonth:{year:2026,month:2},allocationMode:'disponible',personalOwner:'jonny'},
   work:{
     people:{jonny:{name:'Jonny',salaryMode:'horas',hourly:14,irpf:12,extraRate:15,veladaRate:18},angela:{name:'Angela',salaryMode:'fijo',fixedSalary:1400}},
     shifts:[
@@ -243,38 +243,118 @@ function renderTimeline(person,year,month){
   }
   return el('div',{},[el('div',{class:'card-title',text:'Detalle rápido'}),el('div',{class:'card-sub',text:'Vista tipo timeline de próximos turnos.'}),tl]);
 }
+
+function ownerLabel(owner){return owner==='jonny' ? 'Jonny' : owner==='angela' ? 'Angela' : 'Hogar';}
+function monthSeries(owner, year, month){
+  const days=new Date(year,month+1,0).getDate();
+  const out=[];
+  for(let d=1;d<=days;d++){
+    const iso=`${year}-${pad2(month+1)}-${pad2(d)}`;
+    const movs=state.economy.movements.filter(m=>m.date===iso && (!owner || m.owner===owner));
+    const income=movs.filter(m=>m.type==='ingreso').reduce((s,m)=>s+Math.abs(Number(m.amount||0)),0);
+    const expense=movs.filter(m=>m.type==='gasto').reduce((s,m)=>s+Math.abs(Number(m.amount||0)),0);
+    out.push({day:d,income,expense});
+  }
+  return out;
+}
+function renderMiniChart(owner, year, month){
+  const series=monthSeries(owner,year,month);
+  const max=Math.max(1,...series.map(x=>Math.max(x.income,x.expense)));
+  const wrap=el('div',{},[
+    el('div',{class:'card-title',text:'Evolución del mes'}),
+    el('div',{class:'card-sub',text:'Ingresos y gastos por día'})
+  ]);
+  const bars=el('div',{class:'mini-chart'});
+  series.forEach(p=>{
+    const col=el('div',{class:'bar-col'});
+    const stack=el('div',{class:'bar-stack'});
+    const ih=Math.max(0,Math.round((p.income/max)*100));
+    const eh=Math.max(0,Math.round((p.expense/max)*100));
+    if(p.income>0) stack.appendChild(el('div',{class:'bar-income',style:`height:${ih}px`}));
+    if(p.expense>0) stack.appendChild(el('div',{class:'bar-expense',style:`height:${eh}px`}));
+    if(p.income===0 && p.expense===0) stack.appendChild(el('div',{style:'height:4px'}));
+    col.appendChild(stack); col.appendChild(el('div',{class:'bar-label',text:String(p.day)}));
+    bars.appendChild(col);
+  });
+  wrap.appendChild(bars);
+  wrap.appendChild(el('div',{class:'bar-legend'},[
+    el('div',{class:'badge'},[el('span',{class:'dot',style:'background:#16a34a'}),el('span',{text:'Ingresos'})]),
+    el('div',{class:'badge'},[el('span',{class:'dot',style:'background:#dc2626'}),el('span',{text:'Gastos'})])
+  ]));
+  return wrap;
+}
+function renderOwnerSummary(owner, year, month){
+  const income=monthlyIncome(owner,year,month), expense=monthlyExpense(owner,year,month), available=monthlyAvailable(owner,year,month);
+  return el('div',{class:'split-grid'},[
+    el('div',{class:'stat-box'},[el('div',{class:'title',text:'Ingresos'}),el('div',{class:'value money-green',text:money(income)})]),
+    el('div',{class:'stat-box'},[el('div',{class:'title',text:'Gastos'}),el('div',{class:'value money-red',text:money(expense)})]),
+    el('div',{class:'stat-box'},[el('div',{class:'title',text:'Disponible'}),el('div',{class:'value money-black',text:money(available)})])
+  ]);
+}
+
 function renderEconomiaPersonal(){
-  const y=state.ui.economyMonth.year,m=state.ui.economyMonth.month, list=monthMovements(y,m,'jonny').sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const y=state.ui.economyMonth.year,m=state.ui.economyMonth.month;
+  const activeOwner=state.ui.personalOwner || 'jonny';
+  const list=monthMovements(y,m,activeOwner).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   return el('div',{},[
     el('div',{class:'card'},[el('div',{class:'card-body'},[
       el('div',{class:'calendar-toolbar'},[monthNav('economyMonth')]),
-      el('div',{class:'kpi-grid'},[
-        kpi('Saldo total',money(monthlyAvailable('jonny',y,m)),'Personal'),
-        kpi('Ingresos mes',money(monthlyIncome('jonny',y,m)),'Jonny'),
-        kpi('Gastos mes',money(monthlyExpense('jonny',y,m)),'Jonny'),
-        kpi('Nómina estimada',money(monthSummary('jonny',state.ui.homeMonth.year,state.ui.homeMonth.month).net),'Trabajo')
+      el('div',{class:'filter-row'},[
+        el('button',{class:activeOwner==='jonny'?'active':'',text:'Jonny',onClick:()=>{state.ui.personalOwner='jonny';save();render();}}),
+        el('button',{class:activeOwner==='angela'?'active':'',text:'Angela',onClick:()=>{state.ui.personalOwner='angela';save();render();}})
+      ]),
+      el('div',{class:'card-title',text:`Economía personal · ${ownerLabel(activeOwner)}`}),
+      el('div',{class:'card-sub',text:'Resumen del mes y movimientos privados'}),
+      el('div',{class:'hr'}),
+      renderOwnerSummary(activeOwner,y,m),
+      el('div',{class:'chart-card'},[
+        renderMiniChart(activeOwner,y,m),
+        el('div',{class:'callout'},[
+          el('div',{class:'card-title',text:'Lectura rápida'}),
+          el('div',{class:'small',text:`Disponible actual de ${ownerLabel(activeOwner)}.`}),
+          el('div',{style:'margin-top:12px;font-size:30px;font-weight:900'},[el('span',{class:'money-black',text:money(monthlyAvailable(activeOwner,y,m))})]),
+          activeOwner==='jonny'
+            ? el('div',{class:'small',style:'margin-top:12px',text:`Nómina estimada trabajo: ${money(monthSummary('jonny', state.ui.homeMonth.year, state.ui.homeMonth.month).net)}`})
+            : el('div',{class:'small',style:'margin-top:12px',text:`Sueldo fijo configurado: ${money((state.work.people.angela||{}).fixedSalary||0)}`})
+        ])
       ])
     ])]),
     el('div',{class:'card'},[el('div',{class:'card-body'},[
-      el('div',{class:'row spread'},[el('div',{},[el('div',{class:'card-title',text:'Movimientos'}),el('div',{class:'card-sub',text:'Privados de Jonny'})]),btn('Nuevo movimiento','primary',()=>openMovementEditor('jonny'))]),
+      el('div',{class:'row spread'},[el('div',{},[el('div',{class:'card-title',text:'Movimientos'}),el('div',{class:'card-sub',text:'Ingreso en verde, gasto en rojo'})]),btn('Nuevo movimiento','primary',()=>openMovementEditor(activeOwner))]),
       el('div',{class:'hr'}),
       list.length?el('div',{class:'list'},list.map(renderMovementItem)):el('div',{class:'empty',text:'Sin movimientos este mes'})
     ])])
   ]);
 }
+
 function renderEconomiaHogar(){
-  const y=state.ui.economyMonth.year,m=state.ui.economyMonth.month, list=monthMovements(y,m,'hogar').sort((a,b)=>String(b.date).localeCompare(String(a.date))), a=allocation(y,m);
+  const y=state.ui.economyMonth.year,m=state.ui.economyMonth.month;
+  const list=monthMovements(y,m,'hogar').sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const a=allocation(y,m);
   return el('div',{},[
     el('div',{class:'card'},[el('div',{class:'card-body'},[
       el('div',{class:'calendar-toolbar'},[
         monthNav('economyMonth'),
         segmented([['disponible','Por saldo disponible'],['ingresos','Por ingresos'],['manual','Manual']], state.ui.allocationMode, id=>{state.ui.allocationMode=id;save();render();})
       ]),
-      el('div',{class:'kpi-grid'},[
-        kpi('Saldo hogar',money(monthlyAvailable('hogar',y,m)),'Compartido'),
-        kpi('Gastos hogar',money(monthlyExpense('hogar',y,m)),'Mes actual'),
-        kpi('Vivienda',money(housingTotal()),'Coste mensual'),
-        kpi('Aporte sugerido',`${money(a.jonny)} / ${money(a.angela)}`,'Jonny / Angela')
+      el('div',{class:'card-title',text:'Economía del hogar'}),
+      el('div',{class:'card-sub',text:'Gastos compartidos, vivienda y aportación recomendada'}),
+      el('div',{class:'hr'}),
+      el('div',{class:'split-grid'},[
+        el('div',{class:'stat-box'},[el('div',{class:'title',text:'Gastos hogar'}),el('div',{class:'value money-red',text:money(monthlyExpense('hogar',y,m))})]),
+        el('div',{class:'stat-box'},[el('div',{class:'title',text:'Coste vivienda'}),el('div',{class:'value money-black',text:money(housingTotal())})]),
+        el('div',{class:'stat-box'},[el('div',{class:'title',text:'Aporte sugerido'}),el('div',{class:'value money-black',text:`${money(a.jonny)} / ${money(a.angela)}`})])
+      ]),
+      el('div',{class:'chart-card'},[
+        renderMiniChart('hogar',y,m),
+        el('div',{class:'callout'},[
+          el('div',{class:'card-title',text:'Reparto de vivienda'}),
+          el('div',{class:'small',text:state.ui.allocationMode==='disponible'?'Basado en saldo disponible de cada uno.':state.ui.allocationMode==='ingresos'?'Basado en ingresos mensuales.':'Basado en reparto manual.'}),
+          el('div',{style:'margin-top:14px'},[
+            el('div',{class:'money-black',style:'font-size:20px;font-weight:900',text:`Jonny: ${money(a.jonny)}`}),
+            el('div',{class:'money-black',style:'font-size:20px;font-weight:900;margin-top:6px',text:`Angela: ${money(a.angela)}`})
+          ])
+        ])
       ])
     ])]),
     el('div',{class:'card'},[el('div',{class:'card-body'},[
