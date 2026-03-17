@@ -3,8 +3,8 @@
   "short_name": "HomeFlow",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f6f7fb",
-  "theme_color": "#f6f7fb",
+  "background_color": "#f5f7fb",
+  "theme_color": "#f5f7fb",
   "icons": [
     {
       "src": "icons/icon-192.png",
